@@ -3,11 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Ritmo Pro</title>
+    <title>Ritmo Pro 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              neon: '#00ff66',
+              darkBg: '#050705',
+              cardBg: '#0b120c',
+              cardBorder: '#14381b'
+            },
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050705;
+        color: #ffffff;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      .neon-glow {
+        box-shadow: 0 0 15px rgba(0, 255, 102, 0.25);
+      }
+      .neon-border {
+        border: 1px solid #14381b;
+      }
+      .neon-border-active {
+        border: 1px solid #00ff66;
+        box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+      }
+      svg {
+        max-width: 150px !important;
+        max-height: 200px !important;
+        margin: 0 auto;
+        display: block;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-[#050705] text-white antialiased">
     <div id="root"></div>
     <script type="module" src="/main.jsx"></script>
   </body>
 </html>
-
