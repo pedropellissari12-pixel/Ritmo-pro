@@ -3,36 +3,22 @@ import BodyMap from './BodyMap.jsx'
 import { useStore, today, calc, context, askAI, RULES } from './lib.js'
 
 const T = today()
-const TABS = [
-  ['home', '⚡', 'Início'],
-  ['pt', '🏋️', 'Personal'],
-  ['sc', '📷', 'Scan'],
-  ['di', '🥗', 'Dieta'],
-  ['pe', '👤', 'Perfil']
-]
 
 export default function App() {
   const [S, setS] = useStore('ritmo_v1', {
-    p: { n: 'Atleta', b: '2000-01-01', s: 'M', h: 175, w: 70, m: 75, o: 'ganhar', d: 4, l: 'academia', e: 'intermediário', f: 4, i: '', r: '' },
+    p: { n: 'Atleta', b: '2000-01-01', s: 'M', h: 175, w: 80, m: 70, o: 'perder', d: 4, l: 'academia', e: 'intermediário', f: 4, i: '', r: '' },
     focus: ['peito', 'ombros'],
     logs: {},
     ex: null
   })
 
-  const [tab, setTab] = useState('home')
+  const [tab, setTab] = useState('di') // Inicializa na aba Dieta / 360
   const [loading, setLoading] = useState(false)
   const [chat, setChat] = useState([])
   const [msg, setMsg] = useState('')
 
   const m = useMemo(() => calc(S.p), [S.p])
   const day = S.logs[T] || { agua: 0, ex: [], check: {} }
-
-  const setDay = (fn) => {
-    setS((old) => {
-      const cur = old.logs[T] || { agua: 0, ex: [], check: {} }
-      return { ...old, logs: { ...old.logs, [T]: fn(cur) } }
-    })
-  }
 
   const toggleFocus = (name) => {
     setS((old) => {
@@ -42,138 +28,209 @@ export default function App() {
     })
   }
 
-  const sendPT = async () => {
-    if (!msg) return
-    const userM = { role: 'user', text: msg }
-    setChat((c) => [...c, userM])
-    setLoading(true)
-    try {
-      const prompt = `${RULES}\n\n${context(S)}\n\nHistórico:\n${chat.map((c) => `${c.role}:${c.text}`).join('\n')}\n\nUsuário: ${msg}`
-      const text = await askAI(prompt, [], false)
-      setChat((c) => [...c, { role: 'assistant', text }])
-      setMsg('')
-    } catch {
-      setChat((c) => [...c, { role: 'assistant', text: 'Tente novamente.' }])
-    }
-    setLoading(false)
-  }
-
   return (
-    <div className="min-h-screen bg-[#14122b] text-[#f2f0ff] font-sans pb-28">
-      {/* Header */}
-      <header className="p-4 bg-[#1f1c42] border-b border-[#322e63] flex justify-between items-center sticky top-0 z-20">
-        <div>
-          <h1 className="text-xl font-extrabold text-[#8b7bff] tracking-tight">Ritmo Pro</h1>
-          <p className="text-xs text-[#a9a4d6]">{S.p.n} • Meta: {S.p.m} kg</p>
+    <div className="min-h-screen bg-[#050705] text-white pb-32 font-sans selection:bg-[#00ff66]">
+      
+      {/* Top Header - Estilo Grid 360 */}
+      <header className="px-5 py-4 bg-[#050705]/90 backdrop-blur-md sticky top-0 z-30 flex justify-between items-center border-b border-[#14381b]">
+        <h1 className="text-2xl font-extrabold text-[#00ff66] tracking-tight">
+          {tab === 'di' ? 'Dieta' : tab === 'tr' ? 'Treino' : tab === 'pt' ? 'Personal' : 'Perfil'}
+        </h1>
+        <div className="flex items-center gap-2">
+          <div className="bg-[#0b120c] border border-[#14381b] px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] flex items-center gap-1.5">
+            <span>🛡️</span> 0 pts
+          </div>
+          <div className="w-8 h-8 rounded-full bg-[#14381b] border border-[#00ff66] flex items-center justify-center text-xs font-bold">
+            👤
+          </div>
         </div>
-        <span className="text-xs bg-[#14122b] text-[#ffd166] px-3 py-1 rounded-full border border-[#322e63] font-semibold">
-          {m.k} kcal/dia
-        </span>
       </header>
 
-      {/* Main Container */}
+      {/* Main Content Area */}
       <main className="p-4 max-w-md mx-auto space-y-4">
-        {tab === 'home' && (
-          <>
-            <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63]">
-              <h2 className="font-bold text-lg text-white mb-2">Resumo de Hoje</h2>
-              <div className="grid grid-cols-3 gap-2 text-center my-3">
-                <div className="bg-[#14122b] p-3 rounded-2xl border border-[#322e63]">
-                  <p className="text-[10px] text-[#a9a4d6]">PROTEÍNA</p>
-                  <p className="font-bold text-[#8b7bff] text-sm">{m.p}g</p>
-                </div>
-                <div className="bg-[#14122b] p-3 rounded-2xl border border-[#322e63]">
-                  <p className="text-[10px] text-[#a9a4d6]">CARBO</p>
-                  <p className="font-bold text-[#ffd166] text-sm">{m.c}g</p>
-                </div>
-                <div className="bg-[#14122b] p-3 rounded-2xl border border-[#322e63]">
-                  <p className="text-[10px] text-[#a9a4d6]">GORDURA</p>
-                  <p className="font-bold text-[#ff7a59] text-sm">{m.g}g</p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center mt-4 pt-3 border-t border-[#322e63]">
-                <span className="text-xs text-[#a9a4d6]">Água consumida:</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setDay((d) => ({ ...d, agua: Math.max(0, (d.agua || 0) - 250) }))} className="px-2 py-1 bg-[#14122b] border border-[#322e63] rounded-lg text-xs">-</button>
-                  <span className="font-bold text-sm text-[#8b7bff]">{day.agua || 0} ml</span>
-                  <button onClick={() => setDay((d) => ({ ...d, agua: (d.agua || 0) + 250 }))} className="px-2 py-1 bg-[#8b7bff] text-white rounded-lg text-xs font-bold">+</button>
-                </div>
-              </div>
+
+        {/* Seleção de Dias estilo Grid 360 */}
+        <div className="flex justify-between items-center bg-[#0b120c] p-1.5 rounded-2xl border border-[#14381b] text-center text-xs font-bold">
+          {[
+            { d: '3', w: 'sáb' },
+            { d: '4', w: 'dom' },
+            { d: '5', w: 'seg' },
+            { d: '6', w: 'ter', active: true },
+            { d: '7', w: 'qua' },
+            { d: '8', w: 'qui' },
+            { d: '9', w: 'sex' }
+          ].map((item, i) => (
+            <div key={i} className={`p-2 rounded-xl transition-all ${item.active ? 'bg-[#00ff66] text-black font-black neon-glow' : 'text-zinc-500'}`}>
+              <div className="text-sm">{item.d}</div>
+              <div className="text-[9px] uppercase">{item.w}</div>
             </div>
-
-            {/* Músculos Prioritários com BodyMap */}
-            <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63]">
-              <h2 className="font-bold text-lg text-white mb-1">Músculos Prioritários</h2>
-              <p className="text-xs text-[#a9a4d6] mb-3">Toque no corpo para selecionar os focos:</p>
-              <div className="bg-[#14122b] p-3 rounded-2xl border border-[#322e63] flex justify-center">
-                <BodyMap selected={S.focus || []} onToggle={toggleFocus} />
-              </div>
-            </div>
-          </>
-        )}
-
-        {tab === 'pt' && (
-          <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63] space-y-3">
-            <h2 className="font-bold text-lg">Personal Trainer IA</h2>
-            <div className="space-y-2 max-h-80 overflow-y-auto p-2 bg-[#14122b] rounded-2xl border border-[#322e63]">
-              {chat.length === 0 && <p className="text-xs text-[#a9a4d6] text-center py-4">Pergunte sobre seus treinos ou peça ajustes.</p>}
-              {chat.map((c, i) => (
-                <div key={i} className={`p-3 rounded-xl text-xs ${c.role === 'user' ? 'bg-[#8b7bff] text-white ml-auto max-w-[80%]' : 'bg-[#1f1c42] text-[#f2f0ff] border border-[#322e63] mr-auto max-w-[85%]'}`}>
-                  {c.text}
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Digite sua dúvida..." className="flex-1 p-3 bg-[#14122b] border border-[#322e63] rounded-xl text-xs text-white" />
-              <button onClick={sendPT} disabled={loading} className="px-4 bg-[#8b7bff] text-white font-bold rounded-xl text-xs">{loading ? '...' : 'Enviar'}</button>
-            </div>
-          </div>
-        )}
-
-        {tab === 'sc' && (
-          <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63] text-center space-y-3">
-            <h2 className="font-bold text-lg">Scan de Alimentos e Exames</h2>
-            <p className="text-xs text-[#a9a4d6]">Envie fotos de pratos de comida ou resultados de exames de sangue para análise rápida.</p>
-            <button onClick={() => alert('Selecione a câmera para enviar.')} className="w-full py-3 bg-[#8b7bff] text-white font-bold rounded-xl text-sm">
-              📷 Enviar Imagem / Documento
-            </button>
-          </div>
-        )}
-
-        {tab === 'di' && (
-          <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63] space-y-3">
-            <h2 className="font-bold text-lg">Plano de Dieta</h2>
-            <p className="text-xs text-[#a9a4d6]">Meta: {m.k} kcal por dia distribuídas em {S.p.f} refeições.</p>
-            <button onClick={() => alert('Gerando sugestão de cardápio...')} className="w-full py-3 bg-[#8b7bff] text-white font-bold rounded-xl text-sm">
-              🥗 Gerar Cardápio Sugerido
-            </button>
-          </div>
-        )}
-
-        {tab === 'pe' && (
-          <div className="bg-[#1f1c42] p-5 rounded-[24px] border border-[#322e63] space-y-3">
-            <h2 className="font-bold text-lg">Seu Perfil</h2>
-            <div className="space-y-2 text-xs">
-              <p><span className="text-[#a9a4d6]">Nome:</span> {S.p.n}</p>
-              <p><span className="text-[#a9a4d6]">Peso Atual:</span> {S.p.w} kg</p>
-              <p><span className="text-[#a9a4d6]">Altura:</span> {S.p.h} cm</p>
-              <p><span className="text-[#a9a4d6]">Objetivo:</span> {S.p.o}</p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#1f1c42] border-t border-[#322e63] p-2 z-30">
-        <div className="max-w-md mx-auto grid grid-cols-5 text-center">
-          {TABS.map(([id, icon, label]) => (
-            <button key={id} onClick={() => setTab(id)} className={`py-2 rounded-xl transition-all ${tab === id ? 'text-[#8b7bff] font-bold bg-[#14122b]' : 'text-[#a9a4d6]'}`}>
-              <span className="text-base block">{icon}</span>
-              <span className="text-[10px] block mt-0.5">{label}</span>
-            </button>
           ))}
         </div>
+
+        {/* Tab Selector: Plano / Meus Planos */}
+        <div className="grid grid-cols-2 gap-2 bg-[#0b120c] p-1 rounded-full border border-[#14381b]">
+          <button className="py-2.5 rounded-full bg-[#14381b] text-[#00ff66] font-bold text-xs border border-[#00ff66]/30">Plano</button>
+          <button className="py-2.5 rounded-full text-zinc-400 font-bold text-xs">Meus Planos</button>
+        </div>
+
+        {/* Card Principal: Anel de Progresso Nutricional (Meta) */}
+        <div className="bg-[#0b120c] border border-[#14381b] rounded-3xl p-5 relative overflow-hidden text-center">
+          <div className="flex justify-between items-center my-2">
+            <div className="text-left">
+              <span className="text-xl font-extrabold text-[#00ff66] block">{S.p.w} kg</span>
+              <span className="text-[10px] text-zinc-400 uppercase font-bold">Peso atual</span>
+            </div>
+
+            {/* Anel Central */}
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-[#14381b]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-[#00ff66] border-t-transparent -rotate-45 neon-glow"></div>
+              <div>
+                <span className="text-lg font-black block text-white">0%</span>
+                <span className="text-[8px] font-bold text-zinc-400 uppercase block">DA META</span>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-xl font-extrabold text-[#00ff66] block">0kg</span>
+              <span className="text-[10px] text-zinc-400 uppercase font-bold">Perdeu ↓</span>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-[#14381b]/50">
+            <span className="bg-[#14381b]/60 text-emerald-300 border border-[#00ff66]/20 px-4 py-1.5 rounded-full text-xs font-bold inline-block">
+              Meta: <strong className="text-white">{S.p.m} kg</strong> • Continue firme
+            </span>
+          </div>
+        </div>
+
+        {/* Seção Nutrientes do Dia */}
+        <div className="bg-[#0b120c] border border-[#14381b] rounded-3xl p-5 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold text-white">Nutrientes do dia</h2>
+            <button className="text-xs text-[#00ff66] bg-[#14381b]/50 px-3 py-1 rounded-full border border-[#00ff66]/20 font-bold">Ocultar</button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Caloria */}
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1">
+                <span className="flex items-center gap-1.5"><span className="text-orange-500">🔥</span> Calorias</span>
+                <span className="text-zinc-400">0 / {m.k} kcal</span>
+                <span className="text-[#00ff66]">0%</span>
+              </div>
+              <div className="w-full bg-[#14381b] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#00ff66] h-full w-[5%] neon-glow"></div>
+              </div>
+            </div>
+
+            {/* Proteína */}
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1">
+                <span className="flex items-center gap-1.5"><span className="text-rose-500">🐟</span> Proteína</span>
+                <span className="text-zinc-400">0 / {m.p}g</span>
+                <span className="text-[#00ff66]">0%</span>
+              </div>
+              <div className="w-full bg-[#14381b] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#00ff66] h-full w-[5%] neon-glow"></div>
+              </div>
+            </div>
+
+            {/* Carbo */}
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1">
+                <span className="flex items-center gap-1.5"><span className="text-amber-500">🍞</span> Carbo</span>
+                <span className="text-zinc-400">0 / {m.c}g</span>
+                <span className="text-[#00ff66]">0%</span>
+              </div>
+              <div className="w-full bg-[#14381b] h-2 rounded-full overflow-hidden">
+                <div className="bg-[#00ff66] h-full w-[5%] neon-glow"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Refeições em Timeline Lateral */}
+        <div className="relative pl-6 space-y-4 border-l-2 border-[#14381b] ml-3">
+          
+          {/* Card Cafe da manha */}
+          <div className="bg-[#0b120c] border border-[#14381b] rounded-3xl p-5 relative">
+            <div className="absolute -left-[31px] top-6 w-4 h-4 rounded-full bg-[#050705] border-2 border-[#00ff66]"></div>
+            
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-[#14381b] rounded-xl text-sm">☕</span>
+                <div>
+                  <h3 className="font-bold text-base text-white">Café da manhã</h3>
+                  <span className="text-[10px] text-zinc-400 font-bold">🕒 06:30</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-[#14381b] text-[#00ff66] px-2.5 py-1 rounded-full border border-[#00ff66]/30">+30 pts</span>
+            </div>
+
+            <p className="text-xs text-zinc-400 font-medium my-3">
+              826 kcal • P 42,9g • C 133,2g • G 19,5g
+            </p>
+
+            <button className="w-full py-3 bg-[#00ff66] text-black font-extrabold rounded-2xl text-xs uppercase tracking-wider neon-glow">
+              ✓ FAZER CHECK-IN
+            </button>
+          </div>
+
+          {/* Card Almoco */}
+          <div className="bg-[#0b120c] border border-[#14381b] rounded-3xl p-5 relative">
+            <div className="absolute -left-[31px] top-6 w-4 h-4 rounded-full bg-[#050705] border-2 border-zinc-700"></div>
+            
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-[#14381b] rounded-xl text-sm">🥗</span>
+                <div>
+                  <h3 className="font-bold text-base text-white">Almoço</h3>
+                  <span className="text-[10px] text-zinc-400 font-bold">🕒 12:30</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-[#14381b] text-[#00ff66] px-2.5 py-1 rounded-full border border-[#00ff66]/30">+30 pts</span>
+            </div>
+
+            <button className="w-full py-3 bg-[#14381b] text-[#00ff66] font-extrabold rounded-2xl text-xs uppercase tracking-wider border border-[#00ff66]/30 mt-2">
+              ✓ FAZER CHECK-IN
+            </button>
+          </div>
+
+        </div>
+
+      </main>
+
+      {/* Dock Inferior Estilo Grid 360 */}
+      <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md bg-[#0b120c]/95 backdrop-blur-xl border border-[#14381b] rounded-3xl p-2 z-40 shadow-2xl">
+        <div className="grid grid-cols-5 items-center text-center relative">
+          
+          <button onClick={() => setTab('home')} className={`py-2 rounded-2xl flex flex-col items-center ${tab === 'home' ? 'text-[#00ff66]' : 'text-zinc-500'}`}>
+            <span className="text-lg">🏠</span>
+          </button>
+
+          <button onClick={() => setTab('tr')} className={`py-2 rounded-2xl flex flex-col items-center ${tab === 'tr' ? 'text-[#00ff66]' : 'text-zinc-500'}`}>
+            <span className="text-lg">🏋️</span>
+          </button>
+
+          {/* Botão de Adicionar Central Flutuante Neon */}
+          <div className="relative -top-5 flex justify-center">
+            <button onClick={() => alert('Adicionar refeição/treino')} className="w-13 h-13 bg-[#00ff66] text-black rounded-full border-4 border-[#050705] text-2xl font-black flex items-center justify-center neon-glow">
+              +
+            </button>
+          </div>
+
+          <button onClick={() => setTab('di')} className={`py-2 rounded-2xl flex flex-col items-center ${tab === 'di' ? 'text-[#00ff66]' : 'text-zinc-500'}`}>
+            <span className="text-lg">🥗</span>
+          </button>
+
+          <button onClick={() => setTab('pe')} className={`py-2 rounded-2xl flex flex-col items-center ${tab === 'pe' ? 'text-[#00ff66]' : 'text-zinc-500'}`}>
+            <span className="text-lg">👤</span>
+          </button>
+
+        </div>
       </nav>
+
     </div>
   )
-                                                              }
+}
