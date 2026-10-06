@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+html, body { background: #14122b; }
+body { padding-top: env(safe-area-inset-top); }
+.field { @apply w-full p-3 rounded-2xl border border-line bg-bg text-ink mt-1.5 mb-3; }
+.btn { @apply w-full rounded-2xl bg-pri text-white font-semibold py-3 px-4 mb-2 disabled:opacity-50; }
+.btn-g { @apply bg-line text-ink; }
